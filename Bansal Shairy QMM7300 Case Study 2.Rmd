@@ -1,0 +1,263 @@
+---
+title: "QMM7300 Case Study 2"
+author: "Shairy Bansal A00328001"
+date: "2025-08-11"
+output: html_document
+---
+
+# Introduction
+
+In the fall term in this course i collected personalized data on 7 variables for 89 days.
+
+```{r include=FALSE}
+shairy <-read.csv("Shairy-Module 1 - Applied Activity.csv")
+nrow(shairy)
+```
+
+| Variable     | How is it recorded                   | Type                |
+|:-------------|:-------------------------------------|:--------------------|
+| Date         | dd/mm/yyyy                           | Identifier          |
+| Class        | Yes/No                               | Nominal Category    |
+| Study        | Hours                                | Continuous Category |
+| Social Media | Yes/No                               | Nominal Category    |
+| Energy Level | 1 (very tired) to 5 (very energetic) | Ordinal Category    |
+| Steps        | Steps taken                          | Discrete Category   |
+| Water Intake | Liters                               | Continuous Category |
+
+The analysis will focus on:
+
+1.  Probability relationships.
+
+2.  Probability distribution.
+
+3.  Confidence intervals.
+
+4.  Hypothesis testing.
+
+# Exploratory Data Analysis
+
+### **1. Contingency Table**
+
+First, I'll create a contingency table for Class attendance and Social Media usage:
+
+```{r echo=FALSE}
+# Load the data
+data <- read.csv("Shairy-Module 1 - Applied Activity.csv")
+
+# Create contingency table
+contingency_table <- table(data$Class, data$Social.Media)
+rownames(contingency_table) <- c("No Class", "Class")
+colnames(contingency_table) <- c("No Social Media", "Social Media")
+contingency_table
+```
+
+**2. Probability Analysis**
+
+#### **a. Complement Rule (NOT)**
+
+**Question**: What is the probability of NOT attending class?
+
+```{r echo=FALSE}
+# Probability of NOT attending class
+p_not_class <- sum(data$Class == "No")/nrow(data)
+p_not_class
+```
+
+P(Not Class) = `r (p_not_class)` 
+
+Interpretation: There's a 48.3% chance I didn't attend class on any given day during this period.
+
+#### **b. Addition Rule (OR)**
+
+**Question**: What is the probability of attending class OR using social media?
+
+```{r echo=FALSE}
+# Probability of Class OR Social Media
+p_class <- sum(data$Class == "Yes")/nrow(data)
+p_social <- sum(data$Social.Media == "Yes")/nrow(data)
+p_both <- sum(data$Class == "Yes" & data$Social.Media == "Yes")/nrow(data)
+
+p_class_or_social <- p_class + p_social - p_both
+p_class_or_social
+```
+
+P(Class OR Social Media) = P(Class) + P(Social Media) - P(Class AND Social Media) = `r round(p_class_or_social, 3)`
+
+Interpretation: There's a 87.6% chance that on any given day I either attended class or used social media.
+
+#### **c. Conditional Probability (GIVEN)**
+
+**Question**: What is the probability of using social media GIVEN that I attended class?
+
+```{r echo=FALSE}
+# Conditional probability
+p_social_given_class <- sum(data$Class == "Yes" & data$Social.Media == "Yes")/sum(data$Class == "Yes")
+p_social_given_class
+```
+
+P(Social Media \| Class) = **`r round(p_social_given_class, 3)`**
+
+Interpretation: On days I attended class, there was a 58.7% chance I also used social media.
+
+#### **d. Multiplication Rule (AND)**
+
+**Question**: What is the probability of attending class AND not using social media?
+
+```{r include=FALSE}
+# Probability of Class AND No Social Media
+p_class_and_no_social <- sum(data$Class == "Yes" & data$Social.Media == "No")/nrow(data)
+p_class_and_no_social
+```
+
+P(Class AND No Social Media) = **`r round(p_class_and_no_social, 3)`**
+
+Interpretation: There was a 21.3% chance on any given day that I attended class and didn't use social media.
+
+#### **3. Mutually Exclusive Events**
+
+Two events are mutually exclusive if they cannot occur at the same time (P(A AND B) = 0).
+
+Checking all combinations:
+
+-   P(Class AND Social Media) = 27/89 ≠ 0
+
+-   P(Class AND No Social Media) = 19/89 ≠ 0
+
+-   P(No Class AND Social Media) = 32/89 ≠ 0
+
+-   P(No Class AND No Social Media) = 11/89 ≠ 0
+
+**Conclusion**: There are no mutually exclusive events in this table.
+
+#### **4. Independent Events**
+
+Two events are independent if P(A AND B) = P(A) × P(B).
+
+Let's check if Class attendance and Social Media usage are independent:
+
+```{r echo=FALSE}
+# Check independence
+p_class <- sum(data$Class == "Yes")/nrow(data)
+p_social <- sum(data$Social.Media == "Yes")/nrow(data)
+p_class_and_social <- sum(data$Class == "Yes" & data$Social.Media == "Yes")/nrow(data)
+
+is_independent <- abs(p_class_and_social - (p_class * p_social)) < 0.05
+is_independent
+```
+
+P(Class AND Social Media) = **`r round(p_class_and_social, 3)`**\
+P(Class) × P(Social Media) = **`r round(p_class * p_social, 3)`**
+
+Since **`r p_class_and_social`** ≈ **`r p_class * p_social`** (difference = **`r round(abs(p_class_and_social - (p_class * p_social)), 3)`**), we can conclude that class attendance and social media usage are **independent** events.
+
+Interpretation: My social media usage patterns don't appear to be influenced by whether or not I attended class, and vice versa.
+
+### **5. Probability Distribution of Study Hours**
+
+The Canadian University Survey Consortium found that only 12% of students spend more than 4.29 hours per day studying (equivalent to \>30 hours/week).
+
+#### **a. Create Categorical Variable**
+
+```{r echo=FALSE}
+# Create categorical variable
+data$Study_More_Than_4.29 <- ifelse(data$Study > 4.29, 1, 0)
+```
+
+#### **b. Sample Proportion**
+
+```{r echo=FALSE}
+# Sample proportion
+sample_prop <- mean(data$Study_More_Than_4.29)
+sample_prop
+```
+
+Sample proportion = **`r round(sample_prop, 3)`** or **`r round(sample_prop * 100, 1)`**%
+
+Interpretation: I studied more than 4.29 hours on **`r round(sample_prop * 100, 1)`**% of days, which is **`r if(sample_prop > 0.12) {"higher"} else {"lower"}`** than the national average of 12%.
+
+#### **6.**
+
+#### **a.Normal Model Parameters**
+
+For a binomial distribution, the mean and standard deviation of the sample proportion are:
+
+-   Mean (μ) = p = 0.12
+
+-   Standard deviation (σ) = sqrt(p(1-p)/n)
+
+```{r echo=FALSE}
+# Normal model parameters
+n <- nrow(data)
+p_pop <- 0.12
+mean_prop <- p_pop
+sd_prop <- sqrt(p_pop * (1 - p_pop) / n)
+
+c(mean_prop, sd_prop)
+```
+
+Mean = `r round(mean_prop, 4)`\
+Standard deviation = `r round(sd_prop, 4)`
+
+#### **d. Probability of Sample Proportion**
+
+```{r echo=FALSE}
+# Probability of getting sample proportion or less
+prob_less <- pnorm(sample_prop, mean = mean_prop, sd = sd_prop)
+prob_less
+```
+
+P( ≤ **`r round(sample_prop, 3)`**) = **`r round(prob_less, 4)`**
+
+Interpretation: There's a **`r round(prob_less * 100, 1)`**% chance of observing a sample proportion of **`r round(sample_prop * 100, 1)`**% or less if the true population proportion is 12%.
+
+### **7. Confidence Interval for Study Proportion**
+
+```{r echo=FALSE}
+# 95% Confidence Interval
+z <- qnorm(0.975)
+se <- sqrt(sample_prop * (1 - sample_prop) / n)
+ci_lower <- sample_prop - z * se
+ci_upper <- sample_prop + z * se
+
+c(ci_lower, ci_upper)
+```
+
+95% CI = (**`r round(ci_lower, 3)`**, **`r round(ci_upper, 3)`**)
+
+Interpretation: We're 95% confident that the true proportion of days I study more than 4.29 hours is between **`r round(ci_lower * 100, 1)`**% and **`r round(ci_upper * 100, 1)`**%.
+
+### **8. Hypothesis Test**
+
+Test if I study more than the general student population (12% of days \> 4.29 hours).
+
+**Null Hypothesis (H₀)**: p = 0.12\
+**Alternative Hypothesis (H₁)**: p \> 0.12 (since sample proportion \> 0.12)
+
+```{r echo=FALSE}
+# Hypothesis test
+z_score <- (sample_prop - p_pop) / sqrt(p_pop * (1 - p_pop) / n)
+p_value <- 1 - pnorm(z_score)
+
+c(z_score, p_value)
+```
+
+z-score = **`r round(z_score, 3)`**\
+p-value = **`r round(p_value, 4)`**
+
+**Conclusion**: Since the p-value (**`r round(p_value, 4)`**) is **`r if(p_value < 0.05) {"less"} else {"greater"}`** than 0.05, we **`r if(p_value < 0.05) {"reject"} else {"fail to reject"}`** the null hypothesis. This suggests that I **`r if(p_value < 0.05) {"do"} else {"do not"}`** study more than 4.29 hours per day significantly more often than the general Canadian student population.
+
+# Conclusion
+
+Through this analysis, I've learned several things about my class attendance and study habits:
+
+1.  **Class Attendance**: I attended class about 52.8% of the time during this period. My social media usage appears independent of whether I attended class or not.
+
+2.  **Study Habits**: I studied more than 4.29 hours on **`r round(sample_prop * 100, 1)`**% of days, which is **`r if(sample_prop > 0.12) {"higher"} else {"lower"}`** than the national average of 12%. The hypothesis test **`r if(p_value < 0.05) {"confirmed"} else {"did not confirm"}`** that this difference is statistically significant.
+
+**Goals for Next Semester**:
+
+1.  Maintain or improve my study hours while focusing on quality of study time
+
+2.  Monitor social media usage to ensure it doesn't interfere with academic priorities
+
+This analysis has provided valuable insights into my academic habits and will help me make more informed decisions about time management in future semesters.
